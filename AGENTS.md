@@ -108,6 +108,7 @@ pnpm typecheck        # TypeScript 类型检查
 | 新增后台业务模块（四件套） | [docs/admin-module.md](docs/admin-module.md) | 新建 Controller/Model/Vue/迁移时 |
 | 后端硬性约束（SoftDelete/迁移/路由） | [docs/backend-conventions.md](docs/backend-conventions.md) | 编写 PHP 代码、迁移文件时 |
 | 前端硬性约束（路由/表单/字段渲染） | [docs/frontend-conventions.md](docs/frontend-conventions.md) | 编写 Vue 页面、表单、表格列时 |
+| 模块/插件开发（市场插件包） | [docs/module-system.md](docs/module-system.md) | 开发可安装模块、理解模块生命周期时 |
 | 功能完成验收 | [docs/completion-checklist.md](docs/completion-checklist.md) | 声称"已完成"功能前必须逐项核对 |
 
 ## Priority
