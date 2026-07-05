@@ -46,23 +46,38 @@ VITE_OUT_DIR = 'dist'
 
 ### 关键环境变量
 
-| 变量 | 说明 |
-|------|------|
-| `VITE_AXIOS_BASE_URL` | API 基础地址 |
-| `VITE_PORT` | 开发服务器端口（默认 5173） |
-| `VITE_OPEN` | 启动时是否自动打开浏览器 |
-| `VITE_BASE_PATH` | 构建基础路径 |
-| `VITE_OUT_DIR` | 构建输出目录 |
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `VITE_AXIOS_BASE_URL` | API 基础地址 | `http://localhost:8000` |
+| `VITE_PORT` | 开发服务器端口 | `1818` |
+| `VITE_OPEN` | 启动时是否自动打开浏览器 | — |
+| `VITE_BASE_PATH` | 构建基础路径 | `./` |
+| `VITE_OUT_DIR` | 构建输出目录 | `dist` |
+
+### 端口职责
+
+| 端口 | 服务 | 说明 |
+|------|------|------|
+| 1818 | Vite dev server | 前端开发服务器 |
+| 8000 | PHP API 后端 | API 请求 |
+
+**后台访问地址**：`http://localhost:1818/#/admin/login`（注意 `#`）
+**禁止**用 `http://localhost:8000/admin/` 访问后台（返回 JSON 错误）
 
 ## BuildAdmin 核心配置（`config/buildadmin.php`）
 
-- CORS 跨域配置
-- 验证码设置
-- 登录重试限制
-- Token 配置（MySQL 或 Redis 存储、过期时间、加密）
-- CDN URL
-- 默认头像
-- 管理员日志自动写入
+| 配置项 | 说明 |
+|--------|------|
+| `open_member_center` | 是否开放前台会员中心（本项目设为 `false`） |
+| `admin_sso` / `user_sso` | 单点登录开关 |
+| `admin_token_keep_time` | 后台 token 有效期 |
+| `user_token_keep_time` | 会员 token 有效期 |
+| CORS 跨域配置 | `AllowCrossDomain` 中间件 |
+| `click_captcha` | 验证码配置 |
+| Token 存储 | MySQL 或 Redis |
+| `proxy_server_ip` | 代理服务器 IP |
+| CDN URL | 静态资源 CDN |
+| 管理员日志 | 自动写入开关 |
 
 ## Git 配置
 
@@ -82,3 +97,15 @@ VITE_OUT_DIR = 'dist'
 - CSS 不拆分（`cssCodeSplit: false`）
 - Source map 关闭
 - chunk 大小警告阈值：1500KB
+- **不配置** `server.proxy`，API 跨域通过 `VITE_AXIOS_BASE_URL` + 后端 CORS 实现
+
+## 插件注册顺序（`main.ts`）
+
+1. `app.use(pinia)` — Pinia 最先注册（router guards 依赖 store）
+2. `await loadLang(app)` — 异步加载语言包（必须在 router 之前完成）
+3. `app.use(router)` — 路由
+4. `app.use(ElementPlus)` — UI 组件库
+5. `directives(app)` — 自定义指令
+6. `registerIcons(app)` — 图标注册
+7. `app.mount('#app')` — 挂载
+8. `app.config.globalProperties.eventBus = mitt()` — 事件总线（挂载后赋值）

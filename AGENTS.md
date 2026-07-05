@@ -26,7 +26,8 @@
 │   ├── api/                # 对外接口应用（前端会员端）
 │   ├── common/             # 公共应用（禁止 URL 直接访问）
 │   │   ├── controller/     # Backend.php、Api.php、Frontend.php 基类
-│   │   └── model/          # 共享模型
+│   │   ├── model/          # 共享模型
+│   │   └── library/        # Auth.php（Token 管理）等
 │   └── BaseController.php  # 根抽象控制器
 ├── config/                 # ThinkPHP 配置
 ├── database/migrations/    # 数据库迁移（Phinx）
@@ -57,7 +58,7 @@ php think migrate:create <name>    # 创建迁移文件
 # 前端（工作目录 web/）
 cd web
 pnpm install          # 安装依赖（首次必装）
-pnpm dev              # 启动前端开发服务器（端口 5173）
+pnpm dev              # 启动前端开发服务器（端口 1818）
 pnpm build            # 生产构建
 pnpm lint             # ESLint 检查
 pnpm lint-fix         # ESLint 自动修复
@@ -72,18 +73,18 @@ pnpm typecheck        # TypeScript 类型检查
 - 使用 `<script setup lang="ts">` 语法，所有 Vue 组件必须添加 `defineOptions({ name: '...' })`
 - 模板引用使用 `useTemplateRef()` 而非 `ref()`
 - 父子组件共享 `baTable` 状态使用 `provide/inject` 模式
-- 国际化使用 `useI18n()` + `t()` 函数
 - 所有 API 调用通过 `createAxios()` 封装，响应格式：`{ code: 1, msg: '...', data: {...} }`
 - Store 使用 `pinia-plugin-persistedstate`，缓存 key 定义在 `stores/constant/cacheKey.ts`
 - 接口类型定义在 `stores/interface/index.ts`
 - 路径别名 `/@` → `src/`
-- 自定义指令：`v-auth`（权限）、`v-drag`（拖拽）、`v-zoom`（缩放）、`v-blur`（失焦）
+- 自定义指令：`v-auth`（权限）、`v-drag`（拖拽）、`v-zoom`（缩放）、`v-blur`（失焦）、`v-tableLateralDrag`（表格横向滚动）
+- 业务字段标签直接用中文，**禁止**用 `t('wallpaper.xxx.title')` 这类未维护的翻译键
 
 ### 后端
 
 - 控制器继承 `app\common\controller\Backend`，在 `initialize()` 中初始化 Model
 - 响应格式：`$this->success('msg', data)` / `$this->error('msg')`
-- 自动时间戳字段：`create_time`、`update_time`
+- 自动时间戳字段：`createtime`、`updatetime`（**无下划线**，unix 时间戳）
 - 数据权限通过 `$dataLimit` 属性控制
 - API URL 格式：`/admin/{Controller}.{action}`（如 `/admin/user.User/index`）
 - 多步操作使用事务：`$this->model->startTrans()` / `->commit()` / `->rollback()`
@@ -94,6 +95,8 @@ pnpm typecheck        # TypeScript 类型检查
 - 后端路由从数据库动态加载，前端通过 `import.meta.glob` 自动匹配组件
 - 布局模式通过 `config.layout.layoutMode` 动态切换
 - 代码提交前会自动运行 lint-staged
+- 后台登录接口：`/admin/Index/login`（非 `/admin/auth.admin/login`）
+- 默认账号：用户名 `admin`，密码 `Admin123`
 
 ## Read-On-Demand Index
 
@@ -102,6 +105,10 @@ pnpm typecheck        # TypeScript 类型检查
 | 修改后端代码或理解后端结构 | [docs/architecture.md](docs/architecture.md) | 编辑 `app/`、`config/`、`database/`、`modules/` 目录下文件时 |
 | 修改前端代码或理解前端结构 | [docs/code-style.md](docs/code-style.md) | 编辑 `web/src/` 下文件、涉及 Vue/TS 规范时 |
 | 配置环境变量或排查连接问题 | [docs/environment.md](docs/environment.md) | 涉及 `.env`、数据库连接、API 地址配置时 |
+| 新增后台业务模块（四件套） | [docs/admin-module.md](docs/admin-module.md) | 新建 Controller/Model/Vue/迁移时 |
+| 后端硬性约束（SoftDelete/迁移/路由） | [docs/backend-conventions.md](docs/backend-conventions.md) | 编写 PHP 代码、迁移文件时 |
+| 前端硬性约束（路由/表单/字段渲染） | [docs/frontend-conventions.md](docs/frontend-conventions.md) | 编写 Vue 页面、表单、表格列时 |
+| 功能完成验收 | [docs/completion-checklist.md](docs/completion-checklist.md) | 声称"已完成"功能前必须逐项核对 |
 
 ## Priority
 

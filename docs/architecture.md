@@ -30,7 +30,8 @@ app/
 │   │   ├── Api.php         # API 控制器基类
 │   │   └── Frontend.php    # 前台控制器基类
 │   ├── model/              # 共享模型
-│   └── library/            # 共享库（Token 等）
+│   ├── library/            # 共享库（Auth.php 等）
+│   └── service/            # 服务层（moduleService.php 等）
 ├── BaseController.php  # 根抽象控制器
 ├── AppService.php
 ├── common.php          # 公共函数
@@ -99,9 +100,15 @@ class Admin extends Backend {
 namespace app\admin\model;
 
 use think\Model;
+use think\model\concern\SoftDelete;
 
-class User extends Model {
-    protected $autoWriteTimestamp = true;
+class Wallpaper extends Model {
+    use SoftDelete;
+
+    protected $autoWriteTimestamp = 'int';
+    protected $createTime = 'createtime';
+    protected $updateTime = 'updatetime';
+    protected $deleteTime = 'deletetime';
 
     // 属性访问器
     public function getAvatarAttr($value): string {
@@ -109,11 +116,17 @@ class User extends Model {
     }
 
     // 关联
-    public function userGroup(): \think\model\relation\BelongsTo {
-        return $this->belongsTo(UserGroup::class, 'group_id');
+    public function category(): \think\model\relation\BelongsTo {
+        return $this->belongsTo(Category::class, 'category_id');
     }
 }
 ```
+
+**注意**：
+- 时间字段是 `createtime`/`updatetime`/`deletetime`（**无下划线**），unix 时间戳
+- `$autoWriteTimestamp = 'int'` 而非 `true`
+- SoftDelete 路径是 `think\model\concern\SoftDelete`（非 `traits\model\SoftDelete`）
+- 使用 SoftDelete 前必须确认表有 `deletetime` 字段，否则报 `Unknown column` 错误
 
 ## 后端响应格式
 
@@ -127,6 +140,7 @@ $this->success('', ['list' => [...], 'total' => N, 'remark' => '']);
 
 - 后台：`/admin/{Controller}.{action}`（如 `/admin/user.User/index`）
 - 前台：`/api/{controller}/{action}`（如 `/api/index/index`）
+- 嵌套控制器用 `.` 分隔目录：`/admin/wallpaper.Wallpaper/index`（非 `/admin/wallpaper/wallpaper/index`）
 
 ## 路由与应用映射
 
@@ -134,13 +148,16 @@ $this->success('', ['list' => [...], 'total' => N, 'remark' => '']);
 - 禁止 URL 访问的应用：`common`
 - 路由配置：`config/route.php`
 - 数据库表前缀：`ba_`（在 `config/database.php` 配置）
-- 自动写入时间戳字段：`create_time`、`update_time`
+- 自动写入时间戳字段：`createtime`、`updatetime`
 
 ## 数据库迁移
 
 - 使用 Phinx 迁移：`php think migrate:create <name>`
 - 执行迁移：`php think migrate:run`
 - 迁移文件位于 `database/migrations/`
+- **建表**可用 `$this->table('xxx')->create()`（自动加 `ba_` 前缀）
+- **索引操作**必须用 `$this->execute()` 执行原始 SQL（Phinx 的 `update()` 不加前缀）
+- 迁移中原始 SQL 表名必须带 `ba_` 前缀
 
 ## 模块系统
 

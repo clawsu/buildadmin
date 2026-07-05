@@ -21,42 +21,50 @@
 ```vue
 <template>
     <div class="default-main ba-table-box">
-        <TableHeader :buttons="[...]" :quick-search-placeholder="..." />
-        <Table />
-        <PopupForm />
+        <TableHeader :buttons="['refresh', 'add', 'edit', 'delete', 'quickSearch', 'columnDisplay']" />
+        <Table ref="tableRef" />
+        <PopupForm ref="formRef" />
     </div>
 </template>
 <script setup lang="ts">
-import { provide } from 'vue'
-import baTableClass from '/@/utils/baTable'
+import { onMounted, provide, useTemplateRef } from 'vue'
 import PopupForm from './popupForm.vue'
-import Table from '/@/components/table/index.vue'
-import TableHeader from '/@/components/table/header/index.vue'
 import { baTableApi } from '/@/api/common'
-import { useI18n } from 'vue-i18n'
+import { defaultOptButtons } from '/@/components/table'
+import TableHeader from '/@/components/table/header/index.vue'
+import Table from '/@/components/table/index.vue'
+import baTableClass from '/@/utils/baTable'
 
-defineOptions({ name: 'user/user' })
+defineOptions({ name: 'wallpaper/xxx' })
 
-const { t } = useI18n()
-const baTable = new baTableClass(
-    new baTableApi('/admin/user.User/'),
-    { column: [/* 列定义 */], dblClickNotEditColumn: [...] },
-    { defaultItems: {/* 表单默认值 */} }
+const formRef = useTemplateRef('formRef')
+const tableRef = useTemplateRef('tableRef')
+
+const baTable: baTableClass = new baTableClass(
+    new baTableApi('/admin/wallpaper.Xxx/'),
+    { column: [/* 列定义 */] }
 )
-baTable.mount()
-baTable.getData()
+
 provide('baTable', baTable)
+
+onMounted(() => {
+    baTable.table.ref = tableRef.value
+    baTable.mount()
+    baTable.getData()
+})
 </script>
 ```
 
 ### 关键约定
 
 - **必须**使用 `<script setup lang="ts">`
-- **必须**添加 `defineOptions({ name: '...' })` 组件名（与路由路径匹配）
+- **必须**添加 `defineOptions({ name: '...' })` 组件名（与菜单 `name` 完全一致）
 - 模板引用使用 `useTemplateRef()` 而非 `ref()`
 - 父子组件共享 `baTable` 使用 `provide/inject`
-- 国际化使用 `useI18n()` + `t()` 函数
-- 表格列定义：`label`、`prop`、`operator`、`render`（tag、image、datetime、buttons 等）
+- **业务字段标签直接用中文**，禁止用 `t('wallpaper.xxx.title')` 这类未维护的翻译键
+- 框架通用键可用 `t('Cancel')`、`t('Save')`、`t('Operate')`、`t('State')` 等
+- `baTable.mount()` 和 `baTable.getData()` 应在 `onMounted` 中调用
+- API 路径用 `.` 分隔：`/admin/wallpaper.Wallpaper/`（非 `/admin/wallpaper/wallpaper/`）
 
 ### PopupForm 模式
 
@@ -64,8 +72,8 @@ provide('baTable', baTable)
 <template>
     <el-dialog class="ba-operate-dialog" :model-value="['Add','Edit'].includes(baTable.form.operate!)" @close="baTable.toggleForm">
         <el-form ref="formRef" :model="baTable.form.items" :rules="rules" @keyup.enter="baTable.onSubmit(formRef)">
-            <el-form-item prop="username" :label="t('user.user.User name')">
-                <el-input v-model="baTable.form.items!.username" />
+            <el-form-item prop="name" label="名称">
+                <el-input v-model="baTable.form.items!.name" />
             </el-form-item>
         </el-form>
         <template #footer>
@@ -85,7 +93,7 @@ const formRef = useTemplateRef('formRef')
 const baTable = inject('baTable') as baTableClass
 
 const rules = reactive({
-    username: [buildValidatorData({ name: 'required', title: t('...') }), buildValidatorData({ name: 'account' })],
+    name: [buildValidatorData({ name: 'required', title: '名称' })],
 })
 </script>
 ```
@@ -107,18 +115,23 @@ api/
     └── user/index.ts
 ```
 
-### API 函数模板
+### baTableApi 类
+
+`baTableApi` 自动从控制器 URL 生成 CRUD 端点：
+
+| 方法 | HTTP | 说明 |
+|------|------|------|
+| `index(filter)` | GET | 分页列表 |
+| `edit(params)` | GET | 编辑 |
+| `del(ids)` | DELETE | 删除 |
+| `postData(action, data)` | POST | 添加/自定义操作 |
+| `sortable(data)` | POST | 排序 |
 
 ```typescript
-import createAxios from '/@/utils/axios'
-
-export const url = '/admin/user.User/'
-export function index() {
-    return createAxios({ url: url + 'index', method: 'get' })
-}
-export function add(params: object = {}) {
-    return createAxios({ url: url + 'add', data: params, method: 'post' })
-}
+// 使用方式
+const api = new baTableApi('/admin/wallpaper.Wallpaper/')
+// 实际调用：api.index() → GET /admin/wallpaper.Wallpaper/index
+//           api.postData('add', data) → POST /admin/wallpaper.Wallpaper/add
 ```
 
 ### Axios 封装特性
@@ -172,9 +185,28 @@ import { defineStore } from 'pinia'
 import { ADMIN_INFO } from './constant/cacheKey'
 
 export const useAdminInfo = defineStore('adminInfo', {
-    state: (): AdminInfo => ({ id: 0, username: '' }),
+    state: (): AdminInfo => ({
+        id: 0,
+        username: '',
+        nickname: '',
+        avatar: '',
+        last_login_time: 0,
+        token: '',
+        refresh_token: '',
+        super: false,
+    }),
     actions: {
-        dataFill(state, exclude = true) { Object.assign(this, state) },
+        dataFill(state: Partial<AdminInfo>, exclude: boolean | string[] = true) {
+            if (exclude === true) {
+                exclude = ['token', 'refresh_token']
+            } else if (exclude === false) {
+                exclude = []
+            }
+            if (Array.isArray(exclude)) {
+                exclude.forEach((item) => { delete state[item as keyof AdminInfo] })
+            }
+            this.$patch(state)
+        },
     },
     persist: { key: ADMIN_INFO },
 })
@@ -212,9 +244,9 @@ layouts/
 | `utils/axios.ts` | HTTP 客户端封装 |
 | `utils/baTable.ts` | CRUD 表格管理类（684 行） |
 | `utils/common.ts` | 权限检查、URL 辅助、防抖、时间格式化 |
-| `utils/validate.ts` | 表单验证：mobile、idNumber、account、password 等 |
+| `utils/validate.ts` | 表单验证器 |
 | `utils/router.ts` | 动态路由处理、菜单处理 |
-| `utils/directives.ts` | 自定义指令：v-auth、v-drag、v-zoom、v-blur |
+| `utils/directives.ts` | 自定义指令 |
 | `utils/storage.ts` | localStorage/sessionStorage 封装 |
 
 ## 自定义指令
@@ -223,6 +255,7 @@ layouts/
 - `v-drag="['.dialog', '.header']"` — 对话框拖拽
 - `v-zoom="'.dialog'"` — 对话框缩放
 - `v-blur` — 聚焦时自动失焦（用于 loading 按钮）
+- `v-tableLateralDrag` — 表格横向滚动
 
 ## 表单验证
 
@@ -230,14 +263,38 @@ layouts/
 
 ```typescript
 const rules = reactive({
-    username: [
-        buildValidatorData({ name: 'required', title: t('用户名') }),
-        buildValidatorData({ name: 'account' }),
+    name: [
+        buildValidatorData({ name: 'required', title: '名称' }),
+    ],
+    mobile: [
+        buildValidatorData({ name: 'mobile' }),
     ],
 })
 ```
 
-支持类型：`required`、`mobile`、`idNumber`、`account`、`password`、`varName`、`number`、`integer`、`float`、`date`、`url`、`email`
+支持类型：`required`、`mobile`、`idNumber`、`account`、`password`、`varName`、`editorRequired`、`number`、`integer`、`float`、`date`、`url`、`email`
+
+## 字段渲染
+
+表格列定义的 `render` 属性：
+
+| render | 用途 | 配合属性 |
+|--------|------|----------|
+| `tag` | 状态标签 | `custom`（颜色映射）、`replaceValue`（值替换） |
+| `datetime` | 时间 | — |
+| `image` | 图片 | — |
+| `color` | 颜色 | — |
+| `buttons` | 操作按钮 | — |
+
+```ts
+{
+    label: '状态',
+    prop: 'status',
+    render: 'tag',
+    custom: { 0: 'danger', 1: 'success' },
+    replaceValue: { 0: '禁用', 1: '启用' },
+}
+```
 
 ## 依赖版本
 
