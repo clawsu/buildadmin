@@ -35,13 +35,13 @@ import TableHeader from '/@/components/table/header/index.vue'
 import Table from '/@/components/table/index.vue'
 import baTableClass from '/@/utils/baTable'
 
-defineOptions({ name: 'wallpaper/xxx' })
+defineOptions({ name: '{module}/xxx' })
 
 const formRef = useTemplateRef('formRef')
 const tableRef = useTemplateRef('tableRef')
 
 const baTable: baTableClass = new baTableClass(
-    new baTableApi('/admin/wallpaper.Xxx/'),
+    new baTableApi('/admin/{module}.Xxx/'),
     { column: [/* 列定义 */] }
 )
 
@@ -61,10 +61,10 @@ onMounted(() => {
 - **必须**添加 `defineOptions({ name: '...' })` 组件名（与菜单 `name` 完全一致）
 - 模板引用使用 `useTemplateRef()` 而非 `ref()`
 - 父子组件共享 `baTable` 使用 `provide/inject`
-- **业务字段标签直接用中文**，禁止用 `t('wallpaper.xxx.title')` 这类未维护的翻译键
+- **业务字段标签直接用中文**，禁止用 `t('xxx.title')` 这类未维护的翻译键
 - 框架通用键可用 `t('Cancel')`、`t('Save')`、`t('Operate')`、`t('State')` 等
 - `baTable.mount()` 和 `baTable.getData()` 应在 `onMounted` 中调用
-- API 路径用 `.` 分隔：`/admin/wallpaper.Wallpaper/`（非 `/admin/wallpaper/wallpaper/`）
+- API 路径用 `.` 分隔：`/admin/{module}.{Module}/`（非 `/admin/{module}/{module}/`）
 
 ### PopupForm 模式
 
@@ -129,9 +129,9 @@ api/
 
 ```typescript
 // 使用方式
-const api = new baTableApi('/admin/wallpaper.Wallpaper/')
-// 实际调用：api.index() → GET /admin/wallpaper.Wallpaper/index
-//           api.postData('add', data) → POST /admin/wallpaper.Wallpaper/add
+const api = new baTableApi('/admin/{module}.{Module}/')
+// 实际调用：api.index() → GET /admin/{module}.{Module}/index
+//           api.postData('add', data) → POST /admin/{module}.{Module}/add
 ```
 
 ### Axios 封装特性

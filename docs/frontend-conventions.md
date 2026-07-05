@@ -13,7 +13,7 @@
 **FORBIDDEN**: 使用 `createWebHistory()`（History 模式）。
 **FORBIDDEN**: 修改 `web/src/router/index.ts` 中的 history 模式。
 
-**根因**: 项目路由配置在 [router/index.ts](file:///Users/su/壁纸小程序/chikr-wallpaper-package-v1.0.7/wallpaper-api/web/src/router/index.ts)，使用 Hash 模式。History 模式需要后端配合 fallback，本项目后端是 ThinkPHP 多应用，不提供该 fallback。
+**根因**: 项目路由配置在 `web/src/router/index.ts`，使用 Hash 模式。History 模式需要后端配合 fallback，本项目后端是 ThinkPHP 多应用，不提供该 fallback。
 
 ```ts
 // ✅ 正例：当前配置（不可修改）
@@ -55,8 +55,8 @@ const router = createRouter({
 ### F2.1 后台页面结构（四件套）
 
 **MUST**: 每个后台业务模块的 Vue 页面包含：
-- `web/src/views/backend/wallpaper/<module>/index.vue` — 列表页
-- `web/src/views/backend/wallpaper/<module>/popupForm.vue` — 表单弹窗
+- `web/src/views/backend/{module}/{submodule}/index.vue` — 列表页
+- `web/src/views/backend/{module}/{submodule}/popupForm.vue` — 表单弹窗
 
 **MUST**: `index.vue` 必须包含以下结构：
 
@@ -79,14 +79,14 @@ import Table from '/@/components/table/index.vue'
 import baTableClass from '/@/utils/baTable'
 
 defineOptions({
-    name: 'wallpaper/xxx',  // 必须与菜单 name 一致
+    name: '{module}/xxx',  // 必须与菜单 name 一致
 })
 
 const formRef = useTemplateRef('formRef')
 const tableRef = useTemplateRef('tableRef')
 
 const baTable: baTableClass = new baTableClass(
-    new baTableApi('/admin/wallpaper.Xxx/'),  // 注意 . 分隔
+    new baTableApi('/admin/{module}.Xxx/'),  // 注意 . 分隔
     {
         column: [/* 字段定义 */],
     }
@@ -104,39 +104,39 @@ onMounted(() => {
 
 ### F2.2 defineOptions name 必须与菜单一致
 
-**MUST**: `defineOptions({ name: 'wallpaper/xxx' })` 必须与 `ba_admin_rule` 表中菜单记录的 `name` 字段完全一致。
+**MUST**: `defineOptions({ name: '{module}/xxx' })` 必须与 `ba_admin_rule` 表中菜单记录的 `name` 字段完全一致。
 
 **根因**: BuildAdmin 路由通过 name 匹配菜单，不一致会导致页面加载后路由不识别、keep-alive 失效。
 
 ```ts
 // ✅ 正例
-defineOptions({ name: 'wallpaper/wallpaper' })  // 对应菜单 name: wallpaper/wallpaper
+defineOptions({ name: '{module}/{module}' })  // 对应菜单 name: {module}/{module}
 
 // ❌ 反例
-defineOptions({ name: 'Wallpaper' })  // 与菜单不匹配
-defineOptions({ name: 'wallpaper/Wallpaper' })  // 大小写不一致
+defineOptions({ name: '{Module}' })  // 与菜单不匹配
+defineOptions({ name: '{module}/{Module}' })  // 大小写不一致
 ```
 
 ### F2.3 API 路径用点分隔
 
-**MUST**: `baTableApi` 的 URL 用 `.` 分隔嵌套控制器：`/admin/wallpaper.Wallpaper/`。
-**FORBIDDEN**: 用 `/` 分隔：`/admin/wallpaper/wallpaper/`。
+**MUST**: `baTableApi` 的 URL 用 `.` 分隔嵌套控制器：`/admin/{module}.{Module}/`。
+**FORBIDDEN**: 用 `/` 分隔：`/admin/{module}/{module}/`。
 
 **根因**: 见后端规范 R3.4，ThinkPHP 嵌套控制器路由规则。
 
 ```ts
 // ✅ 正例
-new baTableApi('/admin/wallpaper.Wallpaper/')
-new baTableApi('/admin/wallpaper.Category/')
+new baTableApi('/admin/{module}.{Module}/')
+new baTableApi('/admin/{module}.Category/')
 
 // ❌ 反例
-new baTableApi('/admin/wallpaper/wallpaper/')  // 404
+new baTableApi('/admin/{module}/{module}/')  // 404
 ```
 
 ### F2.4 字段标签用中文
 
 **MUST**: 业务字段标签、placeholder 直接用中文字符串。
-**FORBIDDEN**: 用 `t('wallpaper.xxx.title')` 这类 i18n 业务翻译键（翻译文件未维护）。
+**FORBIDDEN**: 用 `t('xxx.title')` 这类 i18n 业务翻译键（翻译文件未维护）。
 
 **例外**: 框架通用键可用 `t('Cancel')`、`t('Save')`、`t('Operate')`、`t('State')` 等。
 
@@ -146,7 +146,7 @@ new baTableApi('/admin/wallpaper/wallpaper/')  // 404
 <el-input placeholder="请输入标题" />
 
 <!-- ❌ 反例 -->
-<el-form-item :label="t('wallpaper.title')">  <!-- 翻译键不存在 -->
+<el-form-item :label="t('xxx.title')">  <!-- 翻译键不存在 -->
 ```
 
 ---
@@ -218,11 +218,11 @@ const baTable = inject('baTable') as baTableClass
 **MUST**: 跨模块远程选择用 `type: 'remoteSelect'`，`remoteUrl` 指向目标模块的 index 接口。
 
 ```ts
-// 壁纸表单中选择分类
+// 表单中选择关联数据
 FormItem 用 type="remoteSelect"
 input-attr={{
     field: 'name',
-    remoteUrl: '/admin/wallpaper.Category/index',
+    remoteUrl: '/admin/{module}.Category/index',
     placeholder: '点击选择',
 }}
 ```

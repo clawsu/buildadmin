@@ -30,7 +30,7 @@
 | `$autoWriteTimestamp` | `'int'` | `true` |
 | 表前缀 | `ba_`，迁移原始 SQL 必须带 | 忘记前缀 |
 | 索引操作 | `$this->execute()` 原始 SQL | `$this->table()->addIndex()->update()` |
-| 控制器 URL 分隔符 | `/admin/wallpaper.Wallpaper/index`（`.`） | `/admin/wallpaper/wallpaper/index`（`/`） |
+| 控制器 URL 分隔符 | `/admin/{module}.{Module}/index`（`.`） | `/admin/{module}/{module}/index`（`/`） |
 | 登录接口 | `/admin/Index/login` | `/admin/auth.admin/login` |
 | Token 传递 | 后台 `ba-token` header | `Authorization: Bearer` |
 | 状态字段（user 表） | `enable`/`disable` | `normal`/其他值 |
@@ -43,8 +43,8 @@
 | Router 模式 | `createWebHashHistory()` | `createWebHistory()` |
 | 后台 URL | `http://localhost:1818/#/admin/login`（有`#`） | `http://localhost:1818/admin/` |
 | `defineOptions name` | 与菜单 `name` 字段完全一致 | 任意命名 |
-| API 路径分隔符 | `/admin/wallpaper.Wallpaper/`（`.`） | `/admin/wallpaper/wallpaper/`（`/`） |
-| 字段标签 | 直接用中文 | `t('wallpaper.xxx.title')` |
+| API 路径分隔符 | `/admin/{module}.{Module}/`（`.`） | `/admin/{module}/{module}/`（`/`） |
+| 字段标签 | 直接用中文 | `t('xxx.title')` |
 | `keepalive` 字段 | tinyint `1`/`0` | 字符串 |
 | `server.proxy` | 禁止配置 | 添加 proxy |
 | 端口 | 1818=前端 dev，8000=后端 API | 混用 |

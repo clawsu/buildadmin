@@ -277,13 +277,13 @@ app/admin/library/crud/stubs/
 ### 3.3 菜单结构
 
 ```
-menu_dir: 壁纸管理 (name: wallpaper)
-  ├── menu: 壁纸列表 (name: wallpaper/wallpaper)
-  │   ├── button: 查看 (name: wallpaper/wallpaper/index)
-  │   ├── button: 添加 (name: wallpaper/wallpaper/add)
-  │   ├── button: 编辑 (name: wallpaper/wallpaper/edit)
-  │   ├── button: 删除 (name: wallpaper/wallpaper/del)
-  │   └── button: 排序 (name: wallpaper/wallpaper/sortable)
+menu_dir: {Module}管理 (name: {module})
+  ├── menu: {Module}列表 (name: {module}/{module})
+  │   ├── button: 查看 (name: {module}/{module}/index)
+  │   ├── button: 添加 (name: {module}/{module}/add)
+  │   ├── button: 编辑 (name: {module}/{module}/edit)
+  │   ├── button: 删除 (name: {module}/{module}/del)
+  │   └── button: 排序 (name: {module}/{module}/sortable)
   └── ...
 ```
 

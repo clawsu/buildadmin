@@ -58,7 +58,7 @@ class Banner extends Model
 
 | 表 | deletetime | 软删除 |
 |---|---|---|
-| wallpapers | ✅ | ✅ |
+| users | ✅ | ✅ |
 | categories | ✅ | ✅ |
 | messages | ✅ | ✅ |
 | banners | ❌ | ❌ |
@@ -76,8 +76,8 @@ class Banner extends Model
 
 ```php
 // ✅ 正例：admin 控制器/模型内
-namespace app\admin\controller\wallpaper;
-use app\admin\model\Wallpaper;       // 后台版本
+namespace app\admin\controller\{module};
+use app\admin\model\{Module};       // 后台版本
 use app\admin\model\Category;
 use app\model\User;                  // 用户表共享，只有一份
 
@@ -87,13 +87,13 @@ use app\model\User;                  // 共享版本
 // 不直接 use app\admin\model\* 
 
 // ❌ 反例：admin 内引用错命名空间
-use app\model\Wallpaper;  // 不存在或字段不全
+use app\model\{Module};  // 不存在或字段不全
 ```
 
 ### R1.4 状态字段值语义
 
 **MUST**: 用户表 `ba_user.status` 使用 `enable` / `disable`，对齐 BuildAdmin 框架语义。
-**MUST**: 业务表（wallpapers/categories/tags 等）的 `status` 字段按各自迁移定义的 enum 值（通常是 `'0'`/`'1'`）。
+**MUST**: 业务表（users/categories/tags 等）的 `status` 字段按各自迁移定义的 enum 值（通常是 `'0'`/`'1'`）。
 **FORBIDDEN**: 在 user 表用 `normal` / 其他自定义值。
 
 **根因**: BuildAdmin 的 `Auth` 类（`app/common/library/Auth.php`）和 `Backend` 基类检查 `status` 时用 `enable/disable`。用其他值会导致登录后 `verifyToken` 误判用户已禁用。
@@ -131,7 +131,7 @@ if ($user->status !== 'normal') { return null; }   // 老用户全部被拒
 **MUST**: 创建/修改索引时用 `$this->execute()` 执行原始 SQL，表名带 `ba_` 前缀。
 **FORBIDDEN**: 用 `$this->table('xxx')->addIndex()->update()` 修改已存在表的索引。
 
-**根因**: Phinx 的 `$table->update()` 不会自动应用 `ba_` 表前缀，导致 `Table 'wallpaper_db.messages' doesn't exist` 错误（实际表名是 `ba_messages`）。建表时 `create()` 会加前缀，但 `update()` 不会。
+**根因**: Phinx 的 `$table->update()` 不会自动应用 `ba_` 表前缀，导致 `Table 'app_db.messages' doesn't exist` 错误（实际表名是 `ba_messages`）。建表时 `create()` 会加前缀，但 `update()` 不会。
 
 ```php
 // ✅ 正例：原始 SQL
@@ -164,8 +164,8 @@ public function up(): void
 // ✅ 正例：建表（create 自动加前缀）
 public function up(): void
 {
-    if (!$this->hasTable('wallpapers')) {
-        $this->table('wallpapers', ['comment' => '壁纸表'])
+    if (!$this->hasTable('users')) {
+        $this->table('users', ['comment' => '用户表'])
             ->addColumn('title', 'string', ['limit' => 255])
             ->addColumn('status', 'enum', ['values' => '0,1,2,3', 'default' => '1'])
             ->create();
@@ -196,7 +196,7 @@ public function up(): void
 **MUST**: 
 - `app\api\controller\*` 继承 `app\common\controller\Api`（小程序 API）
 - `app\admin\controller\*` 继承 `app\common\controller\Backend`（后台管理）
-- `app\admin\controller\wallpaper\*` 同样继承 `Backend`
+- `app\admin\controller\{module}\*` 同样继承 `Backend`
 
 ### R3.2 后台控制器 noNeedLogin 声明
 
@@ -237,18 +237,18 @@ $this->error('参数错误');
 
 ### R3.4 后台控制器路由分隔符
 
-**MUST**: ThinkPHP 嵌套控制器 URL 用 `.` 分隔目录，如 `/admin/wallpaper.Wallpaper/index`。
-**FORBIDDEN**: 用 `/` 分隔（如 `/admin/wallpaper/wallpaper/index` 会报控制器不存在）。
+**MUST**: ThinkPHP 嵌套控制器 URL 用 `.` 分隔目录，如 `/admin/{module}.{Module}/index`。
+**FORBIDDEN**: 用 `/` 分隔（如 `/admin/{module}/{module}/index` 会报控制器不存在）。
 
 **根因**: ThinkPHP 多应用控制器路由规则：`应用名/目录1.目录2.控制器/方法`。
 
 ```php
 // ✅ 正例：URL
-/admin/wallpaper.Wallpaper/index   // app\admin\controller\wallpaper\Wallpaper::index
+/admin/{module}.{Module}/index   // app\admin\controller\{module}\{Module}::index
 /admin/auth.Group/index            // app\admin\controller\auth\Group::index
 
 // ❌ 反例
-/admin/wallpaper/wallpaper/index   // 报：控制器不存在 app\admin\controller\Wallpaper
+/admin/{module}/{module}/index   // 报：控制器不存在 app\admin\controller\{Module}
 ```
 
 ---
@@ -275,7 +275,7 @@ $this->error('参数错误');
 
 ```php
 // ✅ 正例
-curl -H "ba-token: xxx-xxx-xxx" http://localhost:8000/admin/wallpaper.Wallpaper/index
+curl -H "ba-token: xxx-xxx-xxx" http://localhost:8000/admin/{module}.{Module}/index
 
 // ❌ 反例
 curl -H "Authorization: Bearer xxx" http://localhost:8000/admin/...  // 返回 303
@@ -309,6 +309,6 @@ curl -H "Authorization: Bearer xxx" http://localhost:8000/admin/...  // 返回 3
 
 ### R5.3 索引
 
-**MUST**: 外键字段加索引（category_id、user_id、wallpaper_id 等）。
+**MUST**: 外键字段加索引（category_id、user_id、{module}_id 等）。
 **MUST**: 常用查询组合加复合索引。
 **MUST**: 唯一字段加唯一索引（如 tags.name、user.openid）。

@@ -140,7 +140,7 @@ $this->success('', ['list' => [...], 'total' => N, 'remark' => '']);
 
 - 后台：`/admin/{Controller}.{action}`（如 `/admin/user.User/index`）
 - 前台：`/api/{controller}/{action}`（如 `/api/index/index`）
-- 嵌套控制器用 `.` 分隔目录：`/admin/wallpaper.Wallpaper/index`（非 `/admin/wallpaper/wallpaper/index`）
+- 嵌套控制器用 `.` 分隔目录：`/admin/{module}.{Module}/index`（非 `/admin/{module}/{module}/index`）
 
 ## 路由与应用映射
 

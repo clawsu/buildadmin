@@ -79,7 +79,7 @@ pnpm typecheck        # TypeScript 类型检查
 | `$autoWriteTimestamp` | 必须设为 `'int'`（**禁止** `true`） | [backend-conventions.md](docs/backend-conventions.md) |
 | 表前缀 | `ba_`，迁移中原始 SQL **必须**带前缀 | [backend-conventions.md](docs/backend-conventions.md) |
 | 索引操作 | **必须**用 `$this->execute()` 原始 SQL（Phinx `update()` 不加前缀） | [backend-conventions.md](docs/backend-conventions.md) |
-| 控制器 URL | 用 `.` 分隔：`/admin/wallpaper.Wallpaper/index`（**禁止** `/` 分隔） | [backend-conventions.md](docs/backend-conventions.md) |
+| 控制器 URL | 用 `.` 分隔：`/admin/{module}.{Module}/index`（**禁止** `/` 分隔） | [backend-conventions.md](docs/backend-conventions.md) |
 | 登录接口 | `/admin/Index/login`（**禁止** `/admin/auth.admin/login`） | [admin-module.md](docs/admin-module.md) |
 | Token 传递 | 后台用 `ba-token` header，前台用 `Authorization: Bearer` | [backend-conventions.md](docs/backend-conventions.md) |
 | 状态字段语义 | user 表用 `enable`/`disable`，业务表按迁移定义 | [backend-conventions.md](docs/backend-conventions.md) |
@@ -92,9 +92,9 @@ pnpm typecheck        # TypeScript 类型检查
 | Router 模式 | **必须** Hash（`createWebHashHistory`），**禁止**改为 History | [frontend-conventions.md](docs/frontend-conventions.md) |
 | 后台 URL | `http://localhost:1818/#/admin/login`（**必须**有 `#`） | [frontend-conventions.md](docs/frontend-conventions.md) |
 | defineOptions name | **必须**与菜单 `name` 字段完全一致 | [frontend-conventions.md](docs/frontend-conventions.md) |
-| API 路径 | 用 `.` 分隔：`/admin/wallpaper.Wallpaper/`（**禁止** `/` 分隔） | [frontend-conventions.md](docs/frontend-conventions.md) |
-| 字段标签 | 直接用中文，**禁止**用 `t('wallpaper.xxx.title')` 这类未维护的翻译键 | [frontend-conventions.md](docs/frontend-conventions.md) |
-| baTableApi URL | 末尾带 `/`：`'/admin/wallpaper.Wallpaper/'` | [code-style.md](docs/code-style.md) |
+| API 路径 | 用 `.` 分隔：`/admin/{module}.{Module}/`（**禁止** `/` 分隔） | [frontend-conventions.md](docs/frontend-conventions.md) |
+| 字段标签 | 直接用中文，**禁止**用 `t('xxx.title')` 这类未维护的翻译键 | [frontend-conventions.md](docs/frontend-conventions.md) |
+| baTableApi URL | 末尾带 `/`：`'/admin/{module}.{Module}/'` | [code-style.md](docs/code-style.md) |
 | keepalive 字段 | tinyint（`1`/`0`），**禁止**填字符串 | [admin-module.md](docs/admin-module.md) |
 | server.proxy | **禁止**配置，API 跨域通过 CORS 实现 | [frontend-conventions.md](docs/frontend-conventions.md) |
 | 端口 | 1818=前端 dev，8000=后端 API（**禁止**混淆） | [environment.md](docs/environment.md) |

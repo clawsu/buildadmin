@@ -10,7 +10,7 @@
 
 ### C1.1 完成的定义
 
-**MUST**: "功能完成"= 实现完整 + 验证通过 + 已提交 + 进度已更新。
+**MUST**: "功能完成"= 实现完整 + 验证通过 + 已提交。
 **FORBIDDEN**: 只写代码不验证就声称完成。
 **FORBIDDEN**: 只完成 API 层就声称整个功能完成（见 [admin-module.md](admin-module.md#a11-完整定义) 四件套）。
 **FORBIDDEN**: 用"理论上应该可以"代替实际测试。
@@ -30,8 +30,8 @@
 **MUST**: 所有新增/修改的 PHP 文件通过 `php -l` 检查。
 
 ```bash
-cd wallpaper-api
-php -l app/admin/controller/wallpaper/Xxx.php
+cd buildadmin
+php -l app/admin/controller/{module}/Xxx.php
 php -l app/admin/model/Xxx.php
 php -l app/api/controller/XxxController.php
 # 输出必须是 "No syntax errors detected"
@@ -70,7 +70,7 @@ LOGIN=$(curl -s -X POST http://localhost:8000/admin/Index/login \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"Admin123","keep":false}')
 TOKEN=$(echo "$LOGIN" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['userInfo']['token'])")
-curl -s http://localhost:8000/admin/wallpaper.Xxx/index -H "ba-token: $TOKEN" | python3 -m json.tool
+curl -s http://localhost:8000/admin/{module}.Xxx/index -H "ba-token: $TOKEN" | python3 -m json.tool
 # 必须包含 "code": 1
 ```
 
@@ -84,7 +84,7 @@ curl -s http://localhost:8000/admin/wallpaper.Xxx/index -H "ba-token: $TOKEN" | 
 
 ```bash
 php -r "require 'vendor/autoload.php'; (new think\App())->initialize(); 
-\$count = \think\facade\Db::name('admin_rule')->where('name','like','wallpaper/xxx%')->count();
+\$count = \think\facade\Db::name('admin_rule')->where('name','like','{module}/xxx%')->count();
 echo 'count=' . \$count . PHP_EOL;
 exit(\$count > 0 ? 0 : 1);"
 ```
@@ -95,7 +95,7 @@ exit(\$count > 0 ? 0 : 1);"
 
 ```bash
 php -r "require 'vendor/autoload.php'; (new think\App())->initialize(); 
-\$empty = \think\facade\Db::name('admin_rule')->where('name','like','wallpaper%')->where('title','')->count();
+\$empty = \think\facade\Db::name('admin_rule')->where('name','like','{module}%')->where('title','')->count();
 echo 'empty_title_count=' . \$empty . PHP_EOL;
 exit(\$empty === 0 ? 0 : 1);"
 ```
@@ -111,8 +111,8 @@ exit(\$empty === 0 ? 0 : 1);"
 **MUST**: `index.vue` 和 `popupForm.vue` 都存在。
 
 ```bash
-ls -la web/src/views/backend/wallpaper/xxx/index.vue
-ls -la web/src/views/backend/wallpaper/xxx/popupForm.vue
+ls -la web/src/views/backend/{module}/xxx/index.vue
+ls -la web/src/views/backend/{module}/xxx/popupForm.vue
 # 两个文件都必须存在
 ```
 
@@ -122,9 +122,9 @@ ls -la web/src/views/backend/wallpaper/xxx/popupForm.vue
 
 ```bash
 # 检查 Vue 文件中的 name
-grep "defineOptions" web/src/views/backend/wallpaper/xxx/index.vue
+grep "defineOptions" web/src/views/backend/{module}/xxx/index.vue
 # 检查数据库菜单 name
-php -r "... Db::name('admin_rule')->where('name','like','wallpaper/xxx%')->select() ..."
+php -r "... Db::name('admin_rule')->where('name','like','{module}/xxx%')->select() ..."
 # 两者必须匹配
 ```
 
@@ -169,11 +169,6 @@ curl -s http://localhost:1818/ | grep '<div id="app">'
 ```bash
 ls test_*.php verify_*.py 2>/dev/null
 # 必须无输出（或文件已删除）
-```
-
-### C5.3 进度文档更新
-
-**MUST**: 更新 `progress.md` 记录本次完成的内容。
 
 ---
 
