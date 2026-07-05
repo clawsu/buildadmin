@@ -66,53 +66,115 @@ pnpm format           # Prettier 格式化
 pnpm typecheck        # TypeScript 类型检查
 ```
 
-## 开发规范
+## 硬性约束（MUST / FORBIDDEN）
 
-### 前端
-
-- 使用 `<script setup lang="ts">` 语法，所有 Vue 组件必须添加 `defineOptions({ name: '...' })`
-- 模板引用使用 `useTemplateRef()` 而非 `ref()`
-- 父子组件共享 `baTable` 状态使用 `provide/inject` 模式
-- 所有 API 调用通过 `createAxios()` 封装，响应格式：`{ code: 1, msg: '...', data: {...} }`
-- Store 使用 `pinia-plugin-persistedstate`，缓存 key 定义在 `stores/constant/cacheKey.ts`
-- 接口类型定义在 `stores/interface/index.ts`
-- 路径别名 `/@` → `src/`
-- 自定义指令：`v-auth`（权限）、`v-drag`（拖拽）、`v-zoom`（缩放）、`v-blur`（失焦）、`v-tableLateralDrag`（表格横向滚动）
-- 业务字段标签直接用中文，**禁止**用 `t('wallpaper.xxx.title')` 这类未维护的翻译键
+> 违反以下任一规则视为功能未完成。详细说明见 `docs/` 对应文档。
 
 ### 后端
 
-- 控制器继承 `app\common\controller\Backend`，在 `initialize()` 中初始化 Model
-- 响应格式：`$this->success('msg', data)` / `$this->error('msg')`
-- 自动时间戳字段：`createtime`、`updatetime`（**无下划线**，unix 时间戳）
-- 数据权限通过 `$dataLimit` 属性控制
-- API URL 格式：`/admin/{Controller}.{action}`（如 `/admin/user.User/index`）
-- 多步操作使用事务：`$this->model->startTrans()` / `->commit()` / `->rollback()`
+| 规则 | 说明 | 详见 |
+|------|------|------|
+| SoftDelete 路径 | `think\model\concern\SoftDelete`（**禁止** `traits\model\SoftDelete`） | [backend-conventions.md](docs/backend-conventions.md) |
+| 时间字段 | `createtime`/`updatetime`（**无下划线**），unix 时间戳 | [backend-conventions.md](docs/backend-conventions.md) |
+| `$autoWriteTimestamp` | 必须设为 `'int'`（**禁止** `true`） | [backend-conventions.md](docs/backend-conventions.md) |
+| 表前缀 | `ba_`，迁移中原始 SQL **必须**带前缀 | [backend-conventions.md](docs/backend-conventions.md) |
+| 索引操作 | **必须**用 `$this->execute()` 原始 SQL（Phinx `update()` 不加前缀） | [backend-conventions.md](docs/backend-conventions.md) |
+| 控制器 URL | 用 `.` 分隔：`/admin/wallpaper.Wallpaper/index`（**禁止** `/` 分隔） | [backend-conventions.md](docs/backend-conventions.md) |
+| 登录接口 | `/admin/Index/login`（**禁止** `/admin/auth.admin/login`） | [admin-module.md](docs/admin-module.md) |
+| Token 传递 | 后台用 `ba-token` header，前台用 `Authorization: Bearer` | [backend-conventions.md](docs/backend-conventions.md) |
+| 状态字段语义 | user 表用 `enable`/`disable`，业务表按迁移定义 | [backend-conventions.md](docs/backend-conventions.md) |
+| 跨模块 Model | admin 内用 `app\admin\model\X`，用户模型用 `app\model\User` | [backend-conventions.md](docs/backend-conventions.md) |
 
-## 核心约定
+### 前端
+
+| 规则 | 说明 | 详见 |
+|------|------|------|
+| Router 模式 | **必须** Hash（`createWebHashHistory`），**禁止**改为 History | [frontend-conventions.md](docs/frontend-conventions.md) |
+| 后台 URL | `http://localhost:1818/#/admin/login`（**必须**有 `#`） | [frontend-conventions.md](docs/frontend-conventions.md) |
+| defineOptions name | **必须**与菜单 `name` 字段完全一致 | [frontend-conventions.md](docs/frontend-conventions.md) |
+| API 路径 | 用 `.` 分隔：`/admin/wallpaper.Wallpaper/`（**禁止** `/` 分隔） | [frontend-conventions.md](docs/frontend-conventions.md) |
+| 字段标签 | 直接用中文，**禁止**用 `t('wallpaper.xxx.title')` 这类未维护的翻译键 | [frontend-conventions.md](docs/frontend-conventions.md) |
+| baTableApi URL | 末尾带 `/`：`'/admin/wallpaper.Wallpaper/'` | [code-style.md](docs/code-style.md) |
+| keepalive 字段 | tinyint（`1`/`0`），**禁止**填字符串 | [admin-module.md](docs/admin-module.md) |
+| server.proxy | **禁止**配置，API 跨域通过 CORS 实现 | [frontend-conventions.md](docs/frontend-conventions.md) |
+| 端口 | 1818=前端 dev，8000=后端 API（**禁止**混淆） | [environment.md](docs/environment.md) |
+
+### 后台模块四件套（缺一不可）
+
+| # | 文件 | 路径 |
+|---|------|------|
+| 1 | PHP 控制器 | `app/admin/controller/{module}/Xxx.php` |
+| 2 | PHP 模型 | `app/admin/model/Xxx.php` |
+| 3 | 数据库迁移 | `database/migrations/YYYYMMDDHHMMSS_xxx.php` |
+| 4 | Vue 页面 | `web/src/views/backend/{module}/xxx/index.vue` + `popupForm.vue` |
+
+**菜单也必须由迁移初始化**（`ba_admin_rule` 表），不可假设"会自动出现"。
+详见 [admin-module.md](docs/admin-module.md)。
+
+### API 响应格式
+
+```json
+{ "code": 1, "msg": "成功", "data": {} }   // 成功
+{ "code": 0, "msg": "失败", "data": {} }   // 失败
+```
+
+### 核心约定
 
 - CRUD 页面使用 `baTableClass` 管理表格和表单状态
 - 后端路由从数据库动态加载，前端通过 `import.meta.glob` 自动匹配组件
 - 布局模式通过 `config.layout.layoutMode` 动态切换
 - 代码提交前会自动运行 lint-staged
-- 后台登录接口：`/admin/Index/login`（非 `/admin/auth.admin/login`）
 - 默认账号：用户名 `admin`，密码 `Admin123`
 
 ## Read-On-Demand Index
 
-| 场景 | 读取文档 | 触发条件 |
-| --- | --- | --- |
-| 修改后端代码或理解后端结构 | [docs/architecture.md](docs/architecture.md) | 编辑 `app/`、`config/`、`database/`、`modules/` 目录下文件时 |
-| 修改前端代码或理解前端结构 | [docs/code-style.md](docs/code-style.md) | 编辑 `web/src/` 下文件、涉及 Vue/TS 规范时 |
-| 配置环境变量或排查连接问题 | [docs/environment.md](docs/environment.md) | 涉及 `.env`、数据库连接、API 地址配置时 |
-| 新增后台业务模块（四件套） | [docs/admin-module.md](docs/admin-module.md) | 新建 Controller/Model/Vue/迁移时 |
-| 后端硬性约束（SoftDelete/迁移/路由） | [docs/backend-conventions.md](docs/backend-conventions.md) | 编写 PHP 代码、迁移文件时 |
-| 前端硬性约束（路由/表单/字段渲染） | [docs/frontend-conventions.md](docs/frontend-conventions.md) | 编写 Vue 页面、表单、表格列时 |
-| 模块/插件开发（市场插件包） | [docs/module-system.md](docs/module-system.md) | 开发可安装模块、理解模块生命周期时 |
+### 硬性约束（开发前必读）
+
+| 场景 | 文档 | 触发条件 |
+|------|------|----------|
+| 后端开发 | [docs/backend-conventions.md](docs/backend-conventions.md) | 编写 PHP 代码、Model、迁移时 |
+| 前端开发 | [docs/frontend-conventions.md](docs/frontend-conventions.md) | 编写 Vue 页面、表单、表格列时 |
+| 新增后台模块 | [docs/admin-module.md](docs/admin-module.md) | 新建 Controller/Model/Vue/迁移时 |
+| 模块/插件开发 | [docs/module-system.md](docs/module-system.md) | 开发可安装模块、理解模块生命周期时 |
 | 功能完成验收 | [docs/completion-checklist.md](docs/completion-checklist.md) | 声称"已完成"功能前必须逐项核对 |
+| 前端代码格式 | [docs/code-style.md](docs/code-style.md) | Prettier/ESLint/Vue 模板/Pinia 规范 |
+
+### 框架参考（按需查阅）
+
+| 场景 | 文档 | 触发条件 |
+|------|------|----------|
+| 理解后端架构 | [docs/architecture.md](docs/architecture.md) | 需要理解控制器继承链、Model 模板时 |
+| 环境配置 | [docs/environment.md](docs/environment.md) | 涉及 `.env`、端口、构建配置时 |
+| 项目概览 | [docs/00-overview.md](docs/00-overview.md) | 首次接触项目 |
+| 目录结构 | [docs/02-directory-structure.md](docs/02-directory-structure.md) | 需要完整目录树时 |
+| 内置组件 | [docs/05-components.md](docs/05-components.md) | 使用 Icon/baInput/FormItem 时 |
+| 表格系统 | [docs/06-table-system.md](docs/06-table-system.md) | 使用 baTable/baTableApi 时 |
+| 表单验证 | [docs/07-form-system.md](docs/07-form-system.md) | 使用 buildValidatorData 时 |
+| 路由与权限 | [docs/08-routing-permissions.md](docs/08-routing-permissions.md) | 配置菜单规则、v-auth 时 |
+| 状态管理 | [docs/09-state-management.md](docs/09-state-management.md) | 使用 Pinia store 时 |
+| 网络请求 | [docs/10-networking.md](docs/10-networking.md) | 使用 createAxios/useFetch 时 |
+| 国际化 | [docs/11-internationalization.md](docs/11-internationalization.md) | 多语言功能 |
+| 安全 | [docs/12-security.md](docs/12-security.md) | XSS/验证码/安全防范 |
+| 部署 | [docs/13-deployment.md](docs/13-deployment.md) | 上线部署 |
+| 问题排查 | [docs/14-troubleshooting.md](docs/14-troubleshooting.md) | 遇到跨域/路由/终端问题 |
+
+## 常见错误速查
+
+| 错误现象 | 根因 | 修复 |
+|----------|------|------|
+| `Trait not found` | SoftDelete 路径错 | 改为 `think\model\concern\SoftDelete` |
+| `Unknown column deletetime` | 表无字段却用 SoftDelete | 检查表结构，移除 SoftDelete |
+| `Table 'xxx' doesn't exist` | Phinx 不加 ba_ 前缀 | 迁移中用 `$this->execute()` |
+| 后台返回 `code:303` | 未登录或 token 错 | 用 `ba-token` header |
+| 登录页不显示 | URL 缺 `#` | 用 `/#/admin/login` |
+| 菜单不显示 | 未初始化菜单数据 | 迁移中插入 `ba_admin_rule` |
+| Vue 页面 404 | component 路径错 | 检查 `component` 字段 |
+| `Incorrect integer value` | keepalive 填字符串 | 用 `1`/`0` |
+| 控制器不存在 | URL 用 `/` 分隔 | 用 `.` 分隔 |
+| 用户被误判禁用 | status 语义不一致 | 用 `enable/disable` |
 
 ## Priority
 
 1. 用户当前的明确指令
-2. 本文件
+2. 本文件（硬性约束）
 3. `docs/` 中的按需文档
