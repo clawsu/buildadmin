@@ -4,8 +4,8 @@
     "license": "Apache-2.0",
     "type": "module",
     "scripts": {
-        "dev": "esno ./src/utils/build.ts && vite --force",
-        "build": "vite build && esno ./src/utils/build.ts",
+        "dev": "esno ./src/utils/dev.ts",
+        "build": "vite build",
         "lint": "eslint .",
         "lint-fix": "eslint --fix .",
         "format": "npx prettier --write .",
